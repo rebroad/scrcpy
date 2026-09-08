@@ -102,10 +102,15 @@ public final class Server {
 
         List<AsyncProcessor> asyncProcessors = new ArrayList<>();
 
-        DesktopConnection connection = DesktopConnection.open(scid, tunnelForward, video, audio, control, sendDummyByte);
+        boolean displayOnly = options.getDisplayOnly();
+        if (displayOnly && (video || audio || control || options.getNewDisplay() == null)) {
+            throw new ConfigurationException("display_only requires new_display and disables video, audio, and control");
+        }
+        DesktopConnection connection = displayOnly ? null
+                : DesktopConnection.open(scid, tunnelForward, video, audio, control, sendDummyByte);
         NewDisplayCapture displayOnlyCapture = null;
         try {
-            if (options.getSendDeviceMeta()) {
+            if (!displayOnly && options.getSendDeviceMeta()) {
                 connection.sendDeviceMeta(Device.getDeviceName());
             }
 
@@ -165,7 +170,7 @@ public final class Server {
                 displayOnlyCapture.startDisplayOnly();
             }
 
-            Completion completion = new Completion(asyncProcessors.size());
+            Completion completion = new Completion(asyncProcessors.size() + (displayOnlyCapture != null ? 1 : 0));
             for (AsyncProcessor asyncProcessor : asyncProcessors) {
                 asyncProcessor.start((fatalError) -> {
                     completion.addCompleted(fatalError);
@@ -184,7 +189,9 @@ public final class Server {
                 displayOnlyCapture.release();
             }
 
-            connection.shutdown();
+            if (connection != null) {
+                connection.shutdown();
+            }
 
             try {
                 if (cleanUp != null) {
@@ -199,7 +206,9 @@ public final class Server {
                 // ignore
             }
 
-            connection.close();
+            if (connection != null) {
+                connection.close();
+            }
         }
     }
 
