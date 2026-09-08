@@ -19,6 +19,7 @@ import com.genymobile.scrcpy.util.Ln;
 import com.genymobile.scrcpy.wrappers.ServiceManager;
 
 import android.graphics.Rect;
+import android.graphics.SurfaceTexture;
 import android.hardware.display.VirtualDisplay;
 import android.os.Build;
 import android.view.Surface;
@@ -73,6 +74,8 @@ public class NewDisplayCapture extends SurfaceCapture {
     private DisplayResizeDebouncer debouncer;
 
     private int dpi;
+    private SurfaceTexture displayOnlySurfaceTexture;
+    private Surface displayOnlySurface;
 
     public NewDisplayCapture(VirtualDisplayListener vdListener, Options options) {
         this.vdListener = vdListener;
@@ -232,7 +235,10 @@ public class NewDisplayCapture extends SurfaceCapture {
         if (dpi == 0) {
             dpi = mainDisplaySize != null ? scaleDpi(mainDisplaySize, mainDisplayDpi, displaySize) : 240;
         }
-        startNew(null);
+        displayOnlySurfaceTexture = new SurfaceTexture(false);
+        displayOnlySurfaceTexture.setDefaultBufferSize(displaySize.getWidth(), displaySize.getHeight());
+        displayOnlySurface = new Surface(displayOnlySurfaceTexture);
+        startNew(displayOnlySurface);
         if (vdListener != null) {
             PositionMapper positionMapper = PositionMapper.create(displaySize, null, displaySize);
             vdListener.onNewVirtualDisplay(virtualDisplay.getDisplay().getDisplayId(), positionMapper);
@@ -331,6 +337,15 @@ public class NewDisplayCapture extends SurfaceCapture {
 
         if (debouncer != null) {
             debouncer.stop();
+        }
+
+        if (displayOnlySurface != null) {
+            displayOnlySurface.release();
+            displayOnlySurface = null;
+        }
+        if (displayOnlySurfaceTexture != null) {
+            displayOnlySurfaceTexture.release();
+            displayOnlySurfaceTexture = null;
         }
 
         if (virtualDisplay != null) {
