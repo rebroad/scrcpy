@@ -209,6 +209,8 @@ public class NewDisplayCapture extends SurfaceCapture {
     }
 
     public void startDisplayOnly() {
+        displaySize = newDisplay.getSize();
+        dpi = newDisplay.getDpi();
         if (displaySize == null || dpi == 0) {
             DisplayInfo displayInfo = ServiceManager.getDisplayManager().getDisplayInfo(0);
             if (displayInfo != null) {
