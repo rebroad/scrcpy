@@ -208,6 +208,35 @@ public class NewDisplayCapture extends SurfaceCapture {
         displayTransform = AffineMatrix.multiplyAll(displayRotationMatrix, eventTransform);
     }
 
+    public void startDisplayOnly() {
+        if (displaySize == null || dpi == 0) {
+            DisplayInfo displayInfo = ServiceManager.getDisplayManager().getDisplayInfo(0);
+            if (displayInfo != null) {
+                if (displaySize == null) {
+                    mainDisplaySize = displayInfo.getSize();
+                    if ((displayInfo.getRotation() % 2) != 0) {
+                        mainDisplaySize = mainDisplaySize.rotate();
+                    }
+                    displaySize = mainDisplaySize;
+                }
+                if (dpi == 0) {
+                    mainDisplayDpi = displayInfo.getDpi();
+                }
+            }
+        }
+        if (displaySize == null) {
+            displaySize = new Size(1920, 1080);
+        }
+        if (dpi == 0) {
+            dpi = mainDisplaySize != null ? scaleDpi(mainDisplaySize, mainDisplayDpi, displaySize) : 240;
+        }
+        startNew(null);
+        if (vdListener != null) {
+            PositionMapper positionMapper = PositionMapper.create(displaySize, null, displaySize);
+            vdListener.onNewVirtualDisplay(virtualDisplay.getDisplay().getDisplayId(), positionMapper);
+        }
+    }
+
     public void startNew(Surface surface) {
         try {
             int flags = VIRTUAL_DISPLAY_FLAG_PUBLIC
@@ -241,7 +270,8 @@ public class NewDisplayCapture extends SurfaceCapture {
                 ServiceManager.getWindowManager().setDisplayImePolicy(virtualDisplayId, displayImePolicy);
             }
 
-            displayMonitor.start(virtualDisplayId, (props) -> {
+            if (getCaptureControl() != null) {
+                displayMonitor.start(virtualDisplayId, (props) -> {
                 int reason;
                 if (flexDisplay) {
                     boolean isClientResize = tracker.onChanged(props);
@@ -257,6 +287,7 @@ public class NewDisplayCapture extends SurfaceCapture {
                 }
                 getCaptureControl().reset(reason);
             });
+            }
         } catch (Exception e) {
             Ln.e("Could not create display", e);
             throw new AssertionError("Could not create display");
