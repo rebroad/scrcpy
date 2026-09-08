@@ -40,6 +40,7 @@ public class Options {
     private boolean tunnelForward;
     private Rect crop;
     private boolean control = true;
+    private boolean displayOnly;
     private int displayId;
     private String cameraId;
     private Size cameraSize;
@@ -101,6 +102,10 @@ public class Options {
 
     public boolean getAudio() {
         return audio;
+    }
+
+    public boolean getDisplayOnly() {
+        return displayOnly;
     }
 
     public int getMaxSize() {
@@ -421,6 +426,9 @@ public class Options {
                     break;
                 case "control":
                     options.control = Boolean.parseBoolean(value);
+                    break;
+                case "display_only":
+                    options.displayOnly = Boolean.parseBoolean(value);
                     break;
                 case "display_id":
                     options.displayId = Integer.parseInt(value);

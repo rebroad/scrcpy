@@ -3,6 +3,7 @@ package com.genymobile.scrcpy.video;
 import com.genymobile.scrcpy.AndroidVersions;
 import com.genymobile.scrcpy.Options;
 import com.genymobile.scrcpy.control.PositionMapper;
+import com.genymobile.scrcpy.device.Device;
 import com.genymobile.scrcpy.display.DisplayInfo;
 import com.genymobile.scrcpy.display.DisplayMonitor;
 import com.genymobile.scrcpy.display.DisplayProperties;
@@ -18,10 +19,14 @@ import com.genymobile.scrcpy.util.AffineMatrix;
 import com.genymobile.scrcpy.util.Ln;
 import com.genymobile.scrcpy.wrappers.ServiceManager;
 
+import android.graphics.PixelFormat;
 import android.graphics.Rect;
-import android.graphics.SurfaceTexture;
+import android.media.Image;
+import android.media.ImageReader;
 import android.hardware.display.VirtualDisplay;
 import android.os.Build;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Surface;
 
 import java.io.IOException;
@@ -74,8 +79,7 @@ public class NewDisplayCapture extends SurfaceCapture {
     private DisplayResizeDebouncer debouncer;
 
     private int dpi;
-    private SurfaceTexture displayOnlySurfaceTexture;
-    private Surface displayOnlySurface;
+    private ImageReader displayOnlyImageReader;
 
     public NewDisplayCapture(VirtualDisplayListener vdListener, Options options) {
         this.vdListener = vdListener;
@@ -235,10 +239,16 @@ public class NewDisplayCapture extends SurfaceCapture {
         if (dpi == 0) {
             dpi = mainDisplaySize != null ? scaleDpi(mainDisplaySize, mainDisplayDpi, displaySize) : 240;
         }
-        displayOnlySurfaceTexture = new SurfaceTexture(false);
-        displayOnlySurfaceTexture.setDefaultBufferSize(displaySize.getWidth(), displaySize.getHeight());
-        displayOnlySurface = new Surface(displayOnlySurfaceTexture);
-        startNew(displayOnlySurface);
+        displayOnlyImageReader = ImageReader.newInstance(displaySize.getWidth(), displaySize.getHeight(),
+                PixelFormat.RGBA_8888, 3);
+        displayOnlyImageReader.setOnImageAvailableListener(reader -> {
+            Image image = reader.acquireLatestImage();
+            if (image != null) {
+                image.close();
+            }
+        }, new Handler(Looper.getMainLooper()));
+        startNew(displayOnlyImageReader.getSurface());
+        Device.setDisplayPower(virtualDisplay.getDisplay().getDisplayId(), true);
         if (vdListener != null) {
             PositionMapper positionMapper = PositionMapper.create(displaySize, null, displaySize);
             vdListener.onNewVirtualDisplay(virtualDisplay.getDisplay().getDisplayId(), positionMapper);
@@ -339,13 +349,9 @@ public class NewDisplayCapture extends SurfaceCapture {
             debouncer.stop();
         }
 
-        if (displayOnlySurface != null) {
-            displayOnlySurface.release();
-            displayOnlySurface = null;
-        }
-        if (displayOnlySurfaceTexture != null) {
-            displayOnlySurfaceTexture.release();
-            displayOnlySurfaceTexture = null;
+        if (displayOnlyImageReader != null) {
+            displayOnlyImageReader.close();
+            displayOnlyImageReader = null;
         }
 
         if (virtualDisplay != null) {
