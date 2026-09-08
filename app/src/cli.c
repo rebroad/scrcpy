@@ -3131,10 +3131,6 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
             return false;
         }
 
-        if (!opts->video) {
-            LOGE("--new-display is incompatible with --no-video");
-            return false;
-        }
     }
 
     if (opts->render_fit == SC_RENDER_FIT_AUTO) {

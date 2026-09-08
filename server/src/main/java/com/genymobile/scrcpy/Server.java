@@ -103,6 +103,7 @@ public final class Server {
         List<AsyncProcessor> asyncProcessors = new ArrayList<>();
 
         DesktopConnection connection = DesktopConnection.open(scid, tunnelForward, video, audio, control, sendDummyByte);
+        NewDisplayCapture displayOnlyCapture = null;
         try {
             if (options.getSendDeviceMeta()) {
                 connection.sendDeviceMeta(Device.getDeviceName());
@@ -159,6 +160,11 @@ public final class Server {
                 }
             }
 
+            if (!video && options.getNewDisplay() != null) {
+                displayOnlyCapture = new NewDisplayCapture(controller, options);
+                displayOnlyCapture.startDisplayOnly();
+            }
+
             Completion completion = new Completion(asyncProcessors.size());
             for (AsyncProcessor asyncProcessor : asyncProcessors) {
                 asyncProcessor.start((fatalError) -> {
@@ -173,6 +179,9 @@ public final class Server {
             }
             for (AsyncProcessor asyncProcessor : asyncProcessors) {
                 asyncProcessor.stop();
+            }
+            if (displayOnlyCapture != null) {
+                displayOnlyCapture.release();
             }
 
             connection.shutdown();
