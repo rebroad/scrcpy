@@ -153,7 +153,8 @@ check_functions = [
 ]
 
 foreach f : check_functions
-  if cc.has_function(f)
+  has_function = f == 'reallocarray' ? cc.has_header_symbol('malloc.h', f) : cc.has_function(f)
+  if has_function
     define = 'HAVE_' + f.underscorify().to_upper()
     conf.set(define, true)
   endif
