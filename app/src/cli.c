@@ -378,7 +378,9 @@ static const struct sc_option options[] = {
                 "display.\n"
                 "\"fallback\" means that the IME should appear on a fallback "
                 "display (the default display).\n"
-                "\"hide\" means that the IME should be hidden.",
+                "\"hide\" means that the IME should be hidden.\n"
+                "Default is \"local\" for --new-display; otherwise the "
+                "existing display policy is unchanged.",
     },
     {
         .longopt_id = OPT_DISPLAY_ORIENTATION,
@@ -3284,6 +3286,11 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
 
         // Force free resizing
         opts->window_aspect_ratio_lock = false;
+    }
+
+    if (opts->new_display
+            && opts->display_ime_policy == SC_DISPLAY_IME_POLICY_UNDEFINED) {
+        opts->display_ime_policy = SC_DISPLAY_IME_POLICY_LOCAL;
     }
 
     if (opts->display_ime_policy != SC_DISPLAY_IME_POLICY_UNDEFINED
