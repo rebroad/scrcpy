@@ -21,9 +21,9 @@ GRADLE=${GRADLE:-$PROJECT_ROOT/../gradlew}
 
 if [[ "$BUILDTYPE" == debug ]]
 then
-    "$GRADLE" -p "$PROJECT_ROOT" assembleDebug
+    "$GRADLE" -p "$PROJECT_ROOT" assembleDebug --no-configuration-cache
     cp "$PROJECT_ROOT/build/outputs/apk/debug/server-debug.apk" "$OUTPUT"
 else
-    "$GRADLE" -p "$PROJECT_ROOT" assembleRelease
+    "$GRADLE" -p "$PROJECT_ROOT" assembleRelease --no-configuration-cache
     cp "$PROJECT_ROOT/build/outputs/apk/release/server-release-unsigned.apk" "$OUTPUT"
 fi

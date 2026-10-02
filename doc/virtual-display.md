@@ -104,7 +104,8 @@ scrcpy --new-display --no-vd-destroy-content
 
 ## Display IME policy
 
-By default, the virtual display IME appears on the default display.
+New virtual displays show the IME locally by default, including when no host
+window is shown (`--no-window`). Existing displays keep their current policy.
 
 To make it appear on the local display, use `--display-ime-policy=local`:
 
@@ -112,3 +113,6 @@ To make it appear on the local display, use `--display-ime-policy=local`:
 scrcpy --display-id=1 --display-ime-policy=local
 scrcpy --new-display --display-ime-policy=local
 ```
+
+Use `--display-ime-policy=fallback` to show it on the default display, or
+`--display-ime-policy=hide` to suppress it.

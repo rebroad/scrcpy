@@ -121,6 +121,31 @@ static void test_options2(void) {
     assert(opts->record_format == SC_RECORD_FORMAT_MP4);
 }
 
+static void test_display_ime_policy(void) {
+    struct {
+        char *argv[5];
+        int argc;
+        enum sc_display_ime_policy expected;
+    } cases[] = {
+        {{"scrcpy"}, 1, SC_DISPLAY_IME_POLICY_UNDEFINED},
+        {{"scrcpy", "--display-id=1"}, 2, SC_DISPLAY_IME_POLICY_UNDEFINED},
+        {{"scrcpy", "--new-display"}, 2, SC_DISPLAY_IME_POLICY_LOCAL},
+        {{"scrcpy", "--new-display", "--no-window", "--record=test.mkv"},
+            4, SC_DISPLAY_IME_POLICY_LOCAL},
+        {{"scrcpy", "--new-display", "--display-ime-policy=fallback"},
+            3, SC_DISPLAY_IME_POLICY_FALLBACK},
+        {{"scrcpy", "--new-display", "--display-ime-policy=hide"},
+            3, SC_DISPLAY_IME_POLICY_HIDE},
+    };
+
+    for (size_t i = 0; i < ARRAY_LEN(cases); ++i) {
+        struct scrcpy_cli_args args = {.opts = scrcpy_options_default};
+        bool ok = scrcpy_parse_args(&args, cases[i].argc, cases[i].argv);
+        assert(ok);
+        assert(args.opts.display_ime_policy == cases[i].expected);
+    }
+}
+
 static void test_parse_shortcut_mods(void) {
     uint8_t mods;
     bool ok;
@@ -157,6 +182,7 @@ int main(int argc, char *argv[]) {
     test_flag_help();
     test_options();
     test_options2();
+    test_display_ime_policy();
     test_parse_shortcut_mods();
     return 0;
 }
