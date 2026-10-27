@@ -65,6 +65,14 @@ For example:
 scrcpy --new-display=1920x1080 --start-app=org.videolan.vlc
 ```
 
+To start an app while keeping desktop input disabled, combine
+`--start-app` with `--no-control`. The app launch is a one-time setup request;
+scrcpy will not forward keyboard, mouse, or touch input:
+
+```bash
+scrcpy --new-display --start-app=com.termux --no-control
+```
+
 The app may itself be a launcher. For example, to run the open source [Fossify
 Launcher]:
 

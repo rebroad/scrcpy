@@ -106,6 +106,7 @@ static void test_options2(void) {
     char *argv[] = {
         "scrcpy",
         "--no-control",
+        "--start-app", "com.termux",
         "--no-playback",
         "--record", "file.mp4", // cannot enable --no-playback without recording
     };
@@ -115,6 +116,7 @@ static void test_options2(void) {
 
     const struct scrcpy_options *opts = &args.opts;
     assert(!opts->control);
+    assert(!strcmp(opts->start_app, "com.termux"));
     assert(!opts->video_playback);
     assert(!opts->audio_playback);
     assert(!strcmp(opts->record_filename, "file.mp4"));

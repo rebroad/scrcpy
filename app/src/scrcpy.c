@@ -449,7 +449,9 @@ scrcpy(struct scrcpy_options *options) {
         .screen_off_timeout = options->screen_off_timeout,
         .capture_orientation = options->capture_orientation,
         .capture_orientation_lock = options->capture_orientation_lock,
-        .control = options->control,
+        // App startup is a one-shot setup request and remains available with
+        // --no-control. In that mode, no desktop input processors are created.
+        .control = options->control || options->start_app,
         .display_id = options->display_id,
         .new_display = options->new_display,
         .display_ime_policy = options->display_ime_policy,
@@ -651,7 +653,7 @@ scrcpy(struct scrcpy_options *options) {
     struct sc_mouse_processor *mp = NULL;
     struct sc_gamepad_processor *gp = NULL;
 
-    if (options->control) {
+    if (options->control || options->start_app) {
         static const struct sc_controller_callbacks controller_cbs = {
             .on_ended = sc_controller_on_ended,
         };
@@ -663,7 +665,12 @@ scrcpy(struct scrcpy_options *options) {
         controller_initialized = true;
 
         controller = &s->controller;
+    }
 
+    struct sc_uhid_devices *uhid_devices = NULL;
+    struct sc_keyboard_uhid *uhid_keyboard = NULL;
+
+    if (options->control) {
 #ifdef HAVE_USB
         bool use_keyboard_aoa =
             options->keyboard_input_mode == SC_KEYBOARD_INPUT_MODE_AOA;
@@ -761,8 +768,6 @@ aoa_complete:
         assert(options->mouse_input_mode != SC_MOUSE_INPUT_MODE_AOA);
 #endif
 
-        struct sc_keyboard_uhid *uhid_keyboard = NULL;
-
         if (options->keyboard_input_mode == SC_KEYBOARD_INPUT_MODE_SDK) {
             sc_keyboard_sdk_init(&s->keyboard_sdk, &s->controller,
                                  options->key_inject_mode,
@@ -795,12 +800,13 @@ aoa_complete:
             gp = &s->gamepad_uhid.gamepad_processor;
         }
 
-        struct sc_uhid_devices *uhid_devices = NULL;
         if (uhid_keyboard) {
             sc_uhid_devices_init(&s->uhid_devices, uhid_keyboard);
             uhid_devices = &s->uhid_devices;
         }
+    }
 
+    if (controller) {
         sc_controller_configure(&s->controller, acksync, uhid_devices);
 
         if (!sc_controller_start(&s->controller)) {
@@ -809,15 +815,15 @@ aoa_complete:
         controller_started = true;
     }
 
-    // There is a controller if and only if control is enabled
-    assert(options->control == !!controller);
+    // A controller is also used for the one-shot --start-app request.
+    assert((options->control || options->start_app) == !!controller);
 
     if (options->window) {
         struct sc_screen_params screen_params = {
             .video = options->video_playback,
             .camera = options->video_source == SC_VIDEO_SOURCE_CAMERA,
             .flex_display = options->flex_display,
-            .controller = controller,
+            .controller = options->control ? controller : NULL,
             .fp = fp,
             .kp = kp,
             .mp = mp,
@@ -1017,7 +1023,7 @@ aoa_complete:
         init_sdl_gamepads();
     }
 
-    if (options->control && options->start_app) {
+    if (options->start_app) {
         assert(controller);
 
         char *name = strdup(options->start_app);

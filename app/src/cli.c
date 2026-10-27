@@ -3519,10 +3519,6 @@ parse_args_with_getopt(struct scrcpy_cli_args *args, int argc, char *argv[],
             LOGE("Cannot request power off on close if control is disabled");
             return false;
         }
-        if (opts->start_app) {
-            LOGE("Cannot start an Android app if control is disabled");
-            return false;
-        }
         if (opts->keep_active) {
             LOGE("Cannot keep device active if control is disabled");
             return false;
